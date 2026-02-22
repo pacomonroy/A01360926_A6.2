@@ -8,30 +8,29 @@ import os
 from reservation_system import Hotel, Customer, Reservation, load_data
 
 
-class TestReservationSystem(unittest.TestCase):
-    """Casos de prueba para las clases Hotel, Customer y Reservation."""
+class BaseTestCase(unittest.TestCase):
+    """Clase base con configuración común para las pruebas."""
 
     def setUp(self):
         """Configura el entorno de prueba limpiando los archivos de datos."""
         self.clean_up_files()
-        # Crea un archivo corrupto para probar el manejo de excepciones
-        with open("corrupted.json", "w", encoding="utf-8") as file:
-            file.write("{invalid_json: data")
 
     def tearDown(self):
         """Limpia los archivos de datos después de cada prueba."""
         self.clean_up_files()
-        if os.path.exists("corrupted.json"):
-            os.remove("corrupted.json")
 
     def clean_up_files(self):
-        """Función auxiliar para eliminar archivos JSON y asegurar estado limpio."""
+        """Función auxiliar para eliminar archivos JSON
+        y asegurar estado limpio."""
         for filename in [
                 Hotel.FILE_NAME, Customer.FILE_NAME, Reservation.FILE_NAME]:
             if os.path.exists(filename):
                 os.remove(filename)
 
-    # ---------------- PRUEBAS DE HOTEL ---------------- #
+
+class TestHotel(BaseTestCase):
+    """Casos de prueba para la clase Hotel."""
+
     def test_create_hotel_success(self):
         """Prueba la creación de un hotel válido."""
         result = Hotel.create_hotel(1, "Hilton", "NY", 100)
@@ -84,7 +83,16 @@ class TestReservationSystem(unittest.TestCase):
         hotel = Hotel(1, "Hilton", "NY", 100)
         self.assertEqual(hotel.hotel_id, "1")
 
-    # ---------------- PRUEBAS DE CLIENTE ---------------- #
+    def test_cancel_room_invalid_hotel_negative(self):
+        """Prueba Negativa 15: Cancelar habitación en hotel
+        inexistente directamente."""
+        result = Hotel.cancel_room(99)
+        self.assertFalse(result)
+
+
+class TestCustomer(BaseTestCase):
+    """Casos de prueba para la clase Customer."""
+
     def test_create_customer_success(self):
         """Prueba la creación de un cliente válido."""
         result = Customer.create_customer(1, "John Doe", "john@test.com")
@@ -131,7 +139,10 @@ class TestReservationSystem(unittest.TestCase):
         result = Customer.modify_customer(99, name="Ghost")
         self.assertFalse(result)
 
-    # ---------------- PRUEBAS DE RESERVACIÓN ---------------- #
+
+class TestReservation(BaseTestCase):
+    """Casos de prueba para la clase Reservation."""
+
     def test_create_reservation_success(self):
         """Prueba la creación de una reservación válida."""
         Hotel.create_hotel(1, "Hilton", "NY", 10)
@@ -162,7 +173,8 @@ class TestReservationSystem(unittest.TestCase):
         self.assertFalse(result)
 
     def test_create_reservation_no_rooms_negative(self):
-        """Prueba Negativa 12: Reservar cuando hay 0 habitaciones disponibles."""
+        """Prueba Negativa 12: Reservar cuando hay 0
+        habitaciones disponibles."""
         Hotel.create_hotel(1, "Hilton", "NY", 0)
         Customer.create_customer(1, "John", "john@test.com")
         result = Reservation.create_reservation(1, 1, 1)
@@ -183,17 +195,27 @@ class TestReservationSystem(unittest.TestCase):
         result = Reservation.cancel_reservation(99)
         self.assertFalse(result)
 
-    # ---------------- MANEJO DE ERRORES / CASOS EXTREMOS ---------------- #
+
+class TestErrorHandling(BaseTestCase):
+    """Casos de prueba para manejo de errores y casos extremos."""
+
+    def setUp(self):
+        """Configura el entorno incluyendo archivo corrupto."""
+        super().setUp()
+        with open("corrupted.json", "w", encoding="utf-8") as file:
+            file.write("{invalid_json: data")
+
+    def tearDown(self):
+        """Limpia archivos incluyendo el corrupto."""
+        super().tearDown()
+        if os.path.exists("corrupted.json"):
+            os.remove("corrupted.json")
+
     def test_load_corrupted_json_negative(self):
         """Prueba Negativa 14: Cargar un archivo JSON corrupto."""
         result = load_data("corrupted.json")
         self.assertEqual(result, {})
 
-    def test_cancel_room_invalid_hotel_negative(self):
-        """Prueba Negativa 15: Cancelar habitación en hotel inexistente directamente."""
-        result = Hotel.cancel_room(99)
-        self.assertFalse(result)
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

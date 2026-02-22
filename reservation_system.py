@@ -11,7 +11,8 @@ import os
 def load_data(filename):
     """
     Carga los datos desde un archivo JSON.
-    Devuelve un diccionario vacío si el archivo no existe o tiene datos inválidos.
+    Devuelve un diccionario vacío si el archivo no existe
+    o tiene datos inválidos.
     """
     if not os.path.exists(filename):
         return {}
